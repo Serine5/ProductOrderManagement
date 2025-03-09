@@ -1,0 +1,49 @@
+name: Build and Deploy to Azure
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout the repository
+      - uses: actions/checkout@v2
+
+      # Set up .NET 6 SDK
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '6.0.x'
+
+      # Build and publish the app
+      - name: Build and Publish
+        run: |
+          dotnet restore
+          dotnet publish ProductOrderManagement/ProductOrderManagement.csproj -c Release -o publish
+
+      # Build the Docker image
+      - name: Build Docker Image
+        run: |
+          docker build -t myregistry.azurecr.io/myapp:latest .
+
+      # Login to Azure using a service principal
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # Login to Azure Container Registry (ACR) and push the image
+      - name: Push Docker Image to ACR
+        run: |
+          docker login myregistry.azurecr.io -u ${{ secrets.ACR_USERNAME }} -p ${{ secrets.ACR_PASSWORD }}
+          docker push myregistry.azurecr.io/myapp:latest
+
+      # Deploy to Azure Web App for Containers
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-container-deploy@v1
+        with:
+          app-name: 'my-web-app'            # used not real creadentials just for example
+          images: 'myregistry.azurecr.io/myapp:latest'
