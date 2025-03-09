@@ -74,6 +74,7 @@ builder.Services.AddHttpClient("ApiClient", client =>
 {
     client.BaseAddress = new Uri("https://localhost:7085/");
 });
+//builder.WebHost.UseUrls("http://*:80");
 
 var app = builder.Build();
 
